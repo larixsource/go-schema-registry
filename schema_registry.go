@@ -14,6 +14,7 @@ const Latest = 0
 
 // Compatibility is the type of compatibility supported by the registry. The schema registry server can enforce certain
 // compatibility rules when new schemas are registered in a subject.
+//go:generate stringer -type=Compatibility
 type Compatibility int
 
 const (
