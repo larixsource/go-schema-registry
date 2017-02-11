@@ -117,7 +117,7 @@ type Registry interface {
 	// CheckSubjectSchema checks if a schema has already been registered under the specified subject. If so, this
 	// returns the schema string along with its globally unique identifier, its version under this subject and the
 	// subject name.
-	CheckSubjectSchema(subject string, schema string) (SubjectSchema, error)
+	CheckSubjectSchema(subject string, schema string) (*SubjectSchema, error)
 
 	// TestCompatibility tests an input schema against a particular version of a subject’s schema for compatibility.
 	// Note that the compatibility level applied for the check is the configured compatibility level for the subject
@@ -130,16 +130,16 @@ type Registry interface {
 	// When there are multiple instances of schema registry running in the same cluster, the update request will be
 	// forwarded to one of the instances designated as the master. If the master is not available, the client will
 	// get an error code indicating that the forwarding has failed.
-	SetConfig(config Config) (Config, error)
+	SetConfig(config *Config) (*Config, error)
 
 	// Config gets the global compatibility level.
-	Config() (Config, error)
+	Config() (*Config, error)
 
 	// SetSubjectConfig updates the compatibility level for the specified subject.
-	SetSubjectConfig(subject string, config Config) (Config, error)
+	SetSubjectConfig(subject string, config *Config) (*Config, error)
 
 	// SubjectConfig gets the compatibility level for a subject.
-	SubjectConfig(subject string) (Config, error)
+	SubjectConfig(subject string) (*Config, error)
 }
 
 // New returns the default Registry implementation.
@@ -185,20 +185,20 @@ func (r *registry) RegisterSubjectSchema(subject string, schema string) (int, er
 	return 0, ErrNotImplemented
 }
 
-func (r *registry) CheckSubjectSchema(subject string, schema string) (SubjectSchema, error) {
+func (r *registry) CheckSubjectSchema(subject string, schema string) (*SubjectSchema, error) {
 	msg := schemaJSON{
 		Schema: schema,
 	}
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(&msg)
 	if err != nil {
-		return SubjectSchema{}, errors.Wrap(err, "error creating JSON msg in CheckSubjectSchema")
+		return nil, errors.Wrap(err, "error creating JSON msg in CheckSubjectSchema")
 	}
 
 	operationURL := r.endpoint + "/subjects/" + subject
 	resp, err := http.Post(operationURL, "application/vnd.schemaregistry.v1+json", &buf)
 	if err != nil {
-		return SubjectSchema{}, errors.Wrapf(err, "error in POST %s", operationURL)
+		return nil, errors.Wrapf(err, "error in POST %s", operationURL)
 	}
 
 	if resp.StatusCode != 200 {
@@ -206,35 +206,35 @@ func (r *registry) CheckSubjectSchema(subject string, schema string) (SubjectSch
 		err = json.NewDecoder(resp.Body).Decode(&errMsg)
 		if err != nil {
 			err = errors.Wrapf(err, "error decoding error response, status=%d", resp.StatusCode)
-			return SubjectSchema{}, err
+			return nil, err
 		}
-		return SubjectSchema{}, &errMsg
+		return nil, &errMsg
 	}
 
 	var ss SubjectSchema
 	err = json.NewDecoder(resp.Body).Decode(&ss)
 	if err != nil {
-		return SubjectSchema{}, errors.Wrap(err, "error decoding response in CheckSubjectSchema")
+		return nil, errors.Wrap(err, "error decoding response in CheckSubjectSchema")
 	}
-	return ss, nil
+	return &ss, nil
 }
 
 func (r *registry) TestCompatibility(subject string, version int, schema string) (bool, error) {
 	return false, ErrNotImplemented
 }
 
-func (r *registry) SetConfig(config Config) (Config, error) {
-	return Config{}, ErrNotImplemented
+func (r *registry) SetConfig(config *Config) (*Config, error) {
+	return nil, ErrNotImplemented
 }
 
-func (r *registry) Config() (Config, error) {
-	return Config{}, ErrNotImplemented
+func (r *registry) Config() (*Config, error) {
+	return nil, ErrNotImplemented
 }
 
-func (r *registry) SetSubjectConfig(subject string, config Config) (Config, error) {
-	return Config{}, ErrNotImplemented
+func (r *registry) SetSubjectConfig(subject string, config *Config) (*Config, error) {
+	return nil, ErrNotImplemented
 }
 
-func (r *registry) SubjectConfig(subject string) (Config, error) {
-	return Config{}, ErrNotImplemented
+func (r *registry) SubjectConfig(subject string) (*Config, error) {
+	return nil, ErrNotImplemented
 }

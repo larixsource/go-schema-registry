@@ -1,7 +1,7 @@
 package schemaregistry
 
 import (
-	"github.com/stretchr/testify/mock"
+	mock "github.com/stretchr/testify/mock"
 )
 
 // MockRegistry is a test double for Registry.
@@ -10,15 +10,15 @@ type MockRegistry struct {
 	mock.Mock
 }
 
-func (_m *MockRegistry) CheckSubjectSchema(subject string, schema string) (SubjectSchema, error) {
+func (_m *MockRegistry) CheckSubjectSchema(subject string, schema string) (*SubjectSchema, error) {
 	ret := _m.Called(subject, schema)
 
-	var r0 SubjectSchema
+	var r0 *SubjectSchema
 
-	if r0f, ok := ret.Get(0).(func(string, string) SubjectSchema); ok {
+	if r0f, ok := ret.Get(0).(func(string, string) *SubjectSchema); ok {
 		r0 = r0f(subject, schema)
 	} else {
-		r0 = ret.Get(0).(SubjectSchema)
+		r0 = ret.Get(0).(*SubjectSchema)
 	}
 	var r1 error
 
@@ -31,15 +31,15 @@ func (_m *MockRegistry) CheckSubjectSchema(subject string, schema string) (Subje
 	return r0, r1
 }
 
-func (_m *MockRegistry) Config() (Config, error) {
+func (_m *MockRegistry) Config() (*Config, error) {
 	ret := _m.Called()
 
-	var r0 Config
+	var r0 *Config
 
-	if r0f, ok := ret.Get(0).(func() Config); ok {
+	if r0f, ok := ret.Get(0).(func() *Config); ok {
 		r0 = r0f()
 	} else {
-		r0 = ret.Get(0).(Config)
+		r0 = ret.Get(0).(*Config)
 	}
 	var r1 error
 
@@ -94,19 +94,19 @@ func (_m *MockRegistry) Schema(id int) (string, error) {
 	return r0, r1
 }
 
-func (_m *MockRegistry) SetConfig(config Config) (Config, error) {
+func (_m *MockRegistry) SetConfig(config *Config) (*Config, error) {
 	ret := _m.Called(config)
 
-	var r0 Config
+	var r0 *Config
 
-	if r0f, ok := ret.Get(0).(func(Config) Config); ok {
+	if r0f, ok := ret.Get(0).(func(*Config) *Config); ok {
 		r0 = r0f(config)
 	} else {
-		r0 = ret.Get(0).(Config)
+		r0 = ret.Get(0).(*Config)
 	}
 	var r1 error
 
-	if r1f, ok := ret.Get(1).(func(Config) error); ok {
+	if r1f, ok := ret.Get(1).(func(*Config) error); ok {
 		r1 = r1f(config)
 	} else {
 		r1 = ret.Error(1)
@@ -115,19 +115,19 @@ func (_m *MockRegistry) SetConfig(config Config) (Config, error) {
 	return r0, r1
 }
 
-func (_m *MockRegistry) SetSubjectConfig(subject string, config Config) (Config, error) {
+func (_m *MockRegistry) SetSubjectConfig(subject string, config *Config) (*Config, error) {
 	ret := _m.Called(subject, config)
 
-	var r0 Config
+	var r0 *Config
 
-	if r0f, ok := ret.Get(0).(func(string, Config) Config); ok {
+	if r0f, ok := ret.Get(0).(func(string, *Config) *Config); ok {
 		r0 = r0f(subject, config)
 	} else {
-		r0 = ret.Get(0).(Config)
+		r0 = ret.Get(0).(*Config)
 	}
 	var r1 error
 
-	if r1f, ok := ret.Get(1).(func(string, Config) error); ok {
+	if r1f, ok := ret.Get(1).(func(string, *Config) error); ok {
 		r1 = r1f(subject, config)
 	} else {
 		r1 = ret.Error(1)
@@ -136,15 +136,15 @@ func (_m *MockRegistry) SetSubjectConfig(subject string, config Config) (Config,
 	return r0, r1
 }
 
-func (_m *MockRegistry) SubjectConfig(subject string) (Config, error) {
+func (_m *MockRegistry) SubjectConfig(subject string) (*Config, error) {
 	ret := _m.Called(subject)
 
-	var r0 Config
+	var r0 *Config
 
-	if r0f, ok := ret.Get(0).(func(string) Config); ok {
+	if r0f, ok := ret.Get(0).(func(string) *Config); ok {
 		r0 = r0f(subject)
 	} else {
-		r0 = ret.Get(0).(Config)
+		r0 = ret.Get(0).(*Config)
 	}
 	var r1 error
 

@@ -89,7 +89,7 @@ func TestRegistry_SetConfigNotImpl(t *testing.T) {
 	registry, err := schemaregistry.New(defaultEndpoint)
 	require.Nil(t, err)
 
-	_, err = registry.SetConfig(schemaregistry.Config{})
+	_, err = registry.SetConfig(&schemaregistry.Config{})
 	if assert.Error(t, err) {
 		assert.Equal(t, schemaregistry.ErrNotImplemented, err)
 	}
@@ -111,7 +111,7 @@ func TestRegistry_SetSubjectConfigNotImpl(t *testing.T) {
 	registry, err := schemaregistry.New(defaultEndpoint)
 	require.Nil(t, err)
 
-	_, err = registry.SetSubjectConfig("", schemaregistry.Config{})
+	_, err = registry.SetSubjectConfig("", &schemaregistry.Config{})
 	if assert.Error(t, err) {
 		assert.Equal(t, schemaregistry.ErrNotImplemented, err)
 	}

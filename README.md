@@ -13,12 +13,12 @@ GET /subjects | Subjects() ([]string, error) | No
 GET /subjects/(string: subject)/versions | SubjectVersions(subject string) ([]int, error) | No
 GET /subjects/(string: subject)/versions/(versionId: version) | SubjectVersion(subject string, version int) (string, error) | No
 POST /subjects/(string: subject)/versions | RegisterSubjectSchema(subject string, schema string) (int, error) | No
-POST /subjects/(string: subject) | CheckSubjectSchema(subject string, schema string) (SubjectSchema, error) | Yes
+POST /subjects/(string: subject) | CheckSubjectSchema(subject string, schema string) (*SubjectSchema, error) | Yes
 POST /compatibility/subjects/(string: subject)/versions/(versionId: version) | TestCompatibility(subject string, version int, schema string) (bool, error) | No
-PUT /config | SetConfig(config Config) (Config, error) | No
-GET /config | Config() (Config, error) | No
-PUT /config/(string: subject) | SetSubjectConfig(subject string, config Config) (Config, error) | No
-GET /config/(string: subject) | SubjectConfig(subject string) (Config, error) | No
+PUT /config | SetConfig(config *Config) (*Config, error) | No
+GET /config | Config() (*Config, error) | No
+PUT /config/(string: subject) | SetSubjectConfig(subject string, config *Config) (*Config, error) | No
+GET /config/(string: subject) | SubjectConfig(subject string) (*Config, error) | No
 
 
 Usage:
@@ -83,7 +83,7 @@ testSchema := `{
   ]
 }`
 registry := &schemaregistry.MockRegistry{}
-registry.On("CheckSubjectSchema", "test-frames-value", testSchema).Return(schemaregistry.SubjectSchema{
+registry.On("CheckSubjectSchema", "test-frames-value", testSchema).Return(&schemaregistry.SubjectSchema{
     Subject: "test-frames-value",
     ID:      1,
     Version: 3,
