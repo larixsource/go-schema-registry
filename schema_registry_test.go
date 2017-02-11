@@ -3,10 +3,6 @@ package schemaregistry_test
 import (
 	"testing"
 
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-
 	"github.com/larixsource/go-schema-registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -75,47 +71,6 @@ func TestRegistry_RegisterSubjectSchemaNotImpl(t *testing.T) {
 	if assert.Error(t, err) {
 		assert.Equal(t, schemaregistry.ErrNotImplemented, err)
 	}
-}
-
-func TestRegistry_CheckSubjectSchemaOK(t *testing.T) {
-	t.Parallel()
-	schema := `{
-  "type": "record",
-  "name": "Frame",
-  "fields": [
-    {
-      "name": "data",
-      "type": "bytes"
-    }
-  ]
-}`
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/subjects/frames-value", r.URL.String())
-		assert.Equal(t, "application/vnd.schemaregistry.v1+json", r.Header.Get("Content-Type"))
-
-		var msg map[string]string
-		err := json.NewDecoder(r.Body).Decode(&msg)
-		require.Nil(t, err)
-		assert.Equal(t, schema, msg["schema"])
-
-		json.NewEncoder(w).Encode(schemaregistry.SubjectSchema{
-			Subject: "frames-value",
-			ID:      1,
-			Version: 2,
-			Schema:  schema,
-		})
-	}))
-	defer ts.Close()
-
-	registry, err := schemaregistry.New(ts.URL)
-	require.Nil(t, err)
-
-	ss, err := registry.CheckSubjectSchema("frames-value", schema)
-	require.Nil(t, err)
-	assert.Equal(t, "frames-value", ss.Subject)
-	assert.Equal(t, 1, ss.ID)
-	assert.Equal(t, 2, ss.Version)
-	assert.Equal(t, schema, ss.Schema)
 }
 
 func TestRegistry_TestCompatibilityNotImpl(t *testing.T) {

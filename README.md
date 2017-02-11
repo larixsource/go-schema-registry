@@ -48,6 +48,26 @@ log.Printf("schema version (in subject): %s", ss.Version)
 log.Printf("returned schema: %s", ss.Schema)
 ```
 
+API errors are returned as an *APIError instance, giving access to the error code and message:
+
+```go
+_, err := registry.CheckSubjectSchema("inexistent-subject", schema)
+if err != nil {
+        apiErr, ok := err.(*schemaregistry.APIError)
+        if ok {
+                switch apiErr.Code {
+                case schemaregistry.SubjectNotFound:
+                        // subject not found
+                case schemaregistry.SchemaNotFound:
+                        // schema not found
+                default:
+                        // other API error, like an Internal server error
+                }
+        }
+        // then, a non-API error, like a connectivity error, JSON encoding error, etc.
+}
+```
+
 
 Also, there is a [Testify](https://github.com/stretchr/testify) mock (MockRegistry) available for testing:
 

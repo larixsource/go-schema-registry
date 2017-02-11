@@ -3,11 +3,11 @@
 package schemaregistry
 
 import (
-	"net/url"
-
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/pkg/errors"
 )
@@ -37,6 +37,27 @@ const (
 	// read the data written in the latest registered schema.
 	Backward
 )
+
+const (
+	// SubjectNotFound is returned when the subject isn't recognized by the Schema Registry
+	SubjectNotFound int = 40401
+
+	// SchemaNotFound is returned when the schema isn't recognized by the Schema Registry
+	SchemaNotFound int = 40402
+)
+
+// APIError is an error returned by the Schema Registry API
+type APIError struct {
+	// Code is the error code
+	Code int `json:"error_code"`
+
+	// Message is the error message
+	Message string `json:"message"`
+}
+
+func (e *APIError) Error() string {
+	return fmt.Sprintf("Schema Registry API error, code: %d message: %s", e.Code, e.Message)
+}
 
 // SubjectSchema holds an Avro schema string along with its globally unique identifier and its version under a specific
 // subject.
@@ -178,6 +199,16 @@ func (r *registry) CheckSubjectSchema(subject string, schema string) (SubjectSch
 	resp, err := http.Post(operationURL, "application/vnd.schemaregistry.v1+json", &buf)
 	if err != nil {
 		return SubjectSchema{}, errors.Wrapf(err, "error in POST %s", operationURL)
+	}
+
+	if resp.StatusCode != 200 {
+		var errMsg APIError
+		err = json.NewDecoder(resp.Body).Decode(&errMsg)
+		if err != nil {
+			err = errors.Wrapf(err, "error decoding error response, status=%d", resp.StatusCode)
+			return SubjectSchema{}, err
+		}
+		return SubjectSchema{}, &errMsg
 	}
 
 	var ss SubjectSchema
