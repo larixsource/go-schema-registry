@@ -5,6 +5,10 @@ package schemaregistry
 import (
 	"net/url"
 
+	"bytes"
+	"encoding/json"
+	"net/http"
+
 	"github.com/pkg/errors"
 )
 
@@ -40,16 +44,16 @@ type SubjectSchema struct {
 	// Subject is the subject name. A subject refers to the name under which the schema is registered. If you are
 	// using the schema registry for Kafka, then a subject refers to either a "<topic>-key" or "<topic>-value"
 	// depending on whether you are registering the key schema for that topic or the value schema.
-	Subject string
+	Subject string `json:"subject"`
 
 	// ID is the unique id of the schema in the registry.
-	ID int
+	ID int `json:"id"`
 
 	// Version is the version of the schema in the subject.
-	Version int
+	Version int `json:"version"`
 
 	// Schema is the Avro schema string
-	Schema string
+	Schema string `json:"schema"`
 }
 
 // Config holds the configuration (global or of a subject)
@@ -123,14 +127,21 @@ func New(endpoint string) (Registry, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid endpoint URL")
 	}
-	r := &registry{}
+	r := &registry{
+		endpoint: endpoint,
+	}
 	return r, nil
 }
 
 // ErrNotImplemented is returned by Registry operations not yet implemented
 var ErrNotImplemented = errors.New("Not implemented yet :(")
 
+type schemaJSON struct {
+	Schema string `json:"schema"`
+}
+
 type registry struct {
+	endpoint string
 }
 
 func (r *registry) Schema(id int) (string, error) {
@@ -154,7 +165,27 @@ func (r *registry) RegisterSubjectSchema(subject string, schema string) (int, er
 }
 
 func (r *registry) CheckSubjectSchema(subject string, schema string) (SubjectSchema, error) {
-	return SubjectSchema{}, ErrNotImplemented
+	msg := schemaJSON{
+		Schema: schema,
+	}
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(&msg)
+	if err != nil {
+		return SubjectSchema{}, errors.Wrap(err, "error creating JSON msg in CheckSubjectSchema")
+	}
+
+	operationURL := r.endpoint + "/subjects/" + subject
+	resp, err := http.Post(operationURL, "application/vnd.schemaregistry.v1+json", &buf)
+	if err != nil {
+		return SubjectSchema{}, errors.Wrapf(err, "error in POST %s", operationURL)
+	}
+
+	var ss SubjectSchema
+	err = json.NewDecoder(resp.Body).Decode(&ss)
+	if err != nil {
+		return SubjectSchema{}, errors.Wrap(err, "error decoding response in CheckSubjectSchema")
+	}
+	return ss, nil
 }
 
 func (r *registry) TestCompatibility(subject string, version int, schema string) (bool, error) {
