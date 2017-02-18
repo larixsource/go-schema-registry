@@ -38,18 +38,42 @@ const (
 	Backward
 )
 
-const (
-	// SubjectNotFound is returned when the subject isn't recognized by the Schema Registry
-	SubjectNotFound int = 40401
+//go:generate stringer -type=ErrorCode
+type ErrorCode int
 
-	// SchemaNotFound is returned when the schema isn't recognized by the Schema Registry
-	SchemaNotFound int = 40402
+const (
+	// SubjectNotFound status code (Subject not found)
+	SubjectNotFound ErrorCode = 40401
+
+	// VersionNotFound status code (Version not found)
+	VersionNotFound ErrorCode = 40402
+
+	// SchemaNotFound status code (Schema not found)
+	SchemaNotFound ErrorCode = 40403
+
+	// InvalidAvroSchema status code (Invalid Avro schema)
+	InvalidAvroSchema ErrorCode = 42201
+
+	// InvalidVersion status code (Invalid version)
+	InvalidVersion ErrorCode = 42202
+
+	// InvalidCompatibilityLevel status code (Invalid compatibility level)
+	InvalidCompatibilityLevel ErrorCode = 42203
+
+	// BackendStoreErr status code (Error in the backend data store)
+	BackendStoreErr ErrorCode = 50001
+
+	// OperationTimedOut status code (Operation timed out)
+	OperationTimedOut ErrorCode = 50002
+
+	// FwdRequestToMasterErr status code (Error while forwarding the request to the master)
+	FwdRequestToMasterErr ErrorCode = 50003
 )
 
 // APIError is an error returned by the Schema Registry API
 type APIError struct {
 	// Code is the error code
-	Code int `json:"error_code"`
+	Code ErrorCode `json:"error_code"`
 
 	// Message is the error message
 	Message string `json:"message"`
@@ -146,7 +170,7 @@ type Registry interface {
 func New(endpoint string) (Registry, error) {
 	_, err := url.ParseRequestURI(endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid endpoint URL")
+		return nil, errors.Wrapf(err, "invalid endpoint URL: %s", endpoint)
 	}
 	r := &registry{
 		endpoint: endpoint,
@@ -159,6 +183,10 @@ var ErrNotImplemented = errors.New("Not implemented yet :(")
 
 type schemaJSON struct {
 	Schema string `json:"schema"`
+}
+
+type schemaIDJSON struct {
+	ID int `json:"id"`
 }
 
 type registry struct {
@@ -182,7 +210,37 @@ func (r *registry) SubjectVersion(subject string, version int) (string, error) {
 }
 
 func (r *registry) RegisterSubjectSchema(subject string, schema string) (int, error) {
-	return 0, ErrNotImplemented
+	msg := schemaJSON{
+		Schema: schema,
+	}
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(&msg)
+	if err != nil {
+		return 0, errors.Wrap(err, "error creating JSON msg in RegisterSubjectSchema")
+	}
+
+	operationURL := r.endpoint + "/subjects/" + subject + "/versions"
+	resp, err := http.Post(operationURL, "application/vnd.schemaregistry.v1+json", &buf)
+	if err != nil {
+		return 0, errors.Wrapf(err, "error in POST %s", operationURL)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errMsg APIError
+		err = json.NewDecoder(resp.Body).Decode(&errMsg)
+		if err != nil {
+			err = errors.Wrapf(err, "error decoding error response, status=%d", resp.StatusCode)
+			return 0, err
+		}
+		return 0, &errMsg
+	}
+
+	var respMsg schemaIDJSON
+	err = json.NewDecoder(resp.Body).Decode(&respMsg)
+	if err != nil {
+		return 0, errors.Wrap(err, "error decoding response in RegisterSubjectSchema")
+	}
+	return respMsg.ID, nil
 }
 
 func (r *registry) CheckSubjectSchema(subject string, schema string) (*SubjectSchema, error) {
@@ -201,7 +259,7 @@ func (r *registry) CheckSubjectSchema(subject string, schema string) (*SubjectSc
 		return nil, errors.Wrapf(err, "error in POST %s", operationURL)
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		var errMsg APIError
 		err = json.NewDecoder(resp.Body).Decode(&errMsg)
 		if err != nil {

@@ -136,6 +136,6 @@ func TestRegistry_CheckSubjectSchemaErrInternalServer(t *testing.T) {
 	_, err = registry.CheckSubjectSchema("frames-value", testSchema)
 	apiErr, ok := err.(*schemaregistry.APIError)
 	require.True(t, ok)
-	assert.Equal(t, 500, apiErr.Code)
+	assert.EqualValues(t, 500, apiErr.Code)
 	assert.Equal(t, "Internal server error", apiErr.Message)
 }

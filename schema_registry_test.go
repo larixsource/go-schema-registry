@@ -14,7 +14,7 @@ func TestNewInvalidEndpoint(t *testing.T) {
 	t.Parallel()
 	_, err := schemaregistry.New("asdf")
 	if assert.Error(t, err) {
-		assert.Equal(t, "invalid endpoint URL: parse asdf: invalid URI for request", err.Error())
+		assert.Equal(t, "invalid endpoint URL: asdf: parse asdf: invalid URI for request", err.Error())
 	}
 }
 
@@ -57,17 +57,6 @@ func TestRegistry_SubjectVersionNotImpl(t *testing.T) {
 	require.Nil(t, err)
 
 	_, err = registry.SubjectVersion("", 0)
-	if assert.Error(t, err) {
-		assert.Equal(t, schemaregistry.ErrNotImplemented, err)
-	}
-}
-
-func TestRegistry_RegisterSubjectSchemaNotImpl(t *testing.T) {
-	t.Parallel()
-	registry, err := schemaregistry.New(defaultEndpoint)
-	require.Nil(t, err)
-
-	_, err = registry.RegisterSubjectSchema("", "")
 	if assert.Error(t, err) {
 		assert.Equal(t, schemaregistry.ErrNotImplemented, err)
 	}
